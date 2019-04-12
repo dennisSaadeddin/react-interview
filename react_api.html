@@ -1,0 +1,193 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <script type="text/javascript" src="https://unpkg.com/react@16/umd/react.development.js"></script>
+  <script type="text/javascript" src="https://unpkg.com/react-dom@16/umd/react-dom.development.js"></script>
+
+  <style id="compiled-css" type="text/css">
+      .car-wrapper {
+        border: 1px solid black;
+        padding: 10px;
+        margin: 10px;
+      }
+
+      .car-price {
+        color: blue;
+        float: right;
+      }
+
+      .car-edit-form {
+        margin: 5px;
+        padding: 5px;
+        border: 1px solid red;
+        display: block;
+      }
+
+      p {
+        margin: 0;
+      }
+
+      .car-edit {}
+
+      .hidden {
+        display: none !important;
+      }
+  </style>
+
+
+  <script type="text/jsx"
+    data-presets="es2017,react,stage-0"
+    data-plugins="transform-decorators-legacy">
+
+    class Car extends React.Component {
+    	state = {
+      	showEditForm: true,
+        name: this.props.name,
+        cylinders: this.props.cylinders,
+        acceleration: this.props.acceleration
+      };
+
+    	editCar() {
+      	this.setState({
+        	showEditForm: true
+        }, () => {});
+      }
+
+      onNameChange = () => {
+      	this.setState({
+        	'name': event.target.value
+        }, () => {});
+      };
+
+      onCylindersChange = () => {
+      	this.setState({
+        	'cylinders': event.target.value
+        }, () => {});
+      };
+
+      onAccelerationChange = () => {
+      	this.setState({
+        	'acceleration': event.target.value
+        }, () => {});
+      };
+
+      render() {
+        this.state = {
+          name: this.props.name,
+          cylinders: this.props.cylinders,
+          acceleration: this.props.acceleration
+        };
+
+        return (
+        <div className="car-wrapper">
+          <table>
+            <tr><td>Acceleration</td><td>{this.state.acceleration}</td></tr>
+            <tr><td>Cylinders</td><td>{this.state.cylinders}</td></tr>
+            <tr><td>Name</td><td>{this.state.name}</td></tr>
+          </table>
+
+          <a href="#" onClick={this.editCar} className="car-edit">edit</a>
+
+          <div className="car-edit-form">
+            <p>Edit car properties</p>
+            <form onSubmit={(event) => {
+                      event.preventDefault();
+                      this.onSubmit();
+            }}>
+              <div>
+                <label>Name: <input name="car-name" value={this.state.name} onChange={this.onNameChange}/></label>
+                </div>
+              <div>
+                <label>Acceleration: <input name="car-acceleration" value={this.state.acceleration} onChange={this.onAccelerationChange}/></label>
+              </div>
+              <div>
+                <label>Cylinders: <input name="car-cylinders" value={this.state.cylinders} onChange={this.onCylindersChange}/></label>
+              </div>
+            </form>
+          </div>
+        </div> );
+      }
+    }
+
+    class CarGrid extends React.Component {
+    	state = {
+    	    page: null,
+    	    perPage: null,
+    	    cars: []
+    	};
+
+      componentDidMount() {
+        fetch("http://localhost/api/v1/car/?format=json")
+          .then(res => res.json())
+          .then(
+            (result) => {
+              this.setState({
+              	cars: result.objects,
+                page: 0,
+                perPage: 5
+              });
+            },
+            (error) => {}
+          )
+      }
+
+      getPageCount = () => { return this.state.cars.length / this.state.perPage; }
+
+      onJumpToPageChange = (event) => {
+      	const newPage = parseInt(event.target.value);
+
+        if (newPage < this.getPageCount() && newPage >= 0) {
+          this.setState({
+            page: newPage
+          }, () => {});
+        }
+      };
+
+      changePage = (newPage) => {
+      	if (newPage < this.getPageCount() && newPage >= 0) {
+        	this.setState({
+          	page: newPage
+          }, () => {});
+        }
+      };
+
+      nextPage = () => {
+      	this.changePage(this.state.page + 1);
+      };
+
+      prevPage = () => {
+      	this.changePage(this.state.page - 1);
+      };
+
+      render() {
+      	const { page, perPage, cars } = this.state;
+        const carMarkup = cars.slice(this.state.page * this.state.perPage, (this.state.page + 1) * this.state.perPage).map((car) => {
+          return <Car name={car.name} acceleration={car.acceleration} cylinders={car.cylinders}/>
+        });
+
+      	return (
+        <div>
+          <p>Showing {perPage} cars of {cars.length}</p>
+      	  {carMarkup}
+          <p>Page: {page} <a href="#" onClick={this.prevPage}>Prev</a> <a href="#" onClick={this.nextPage}>Next</a></p>
+          <label>Jump to page: <input onChange={this.onJumpToPageChange} type="text" name="jump-page"/></label>
+      	</div> );
+      }
+    }
+
+    ReactDOM.render(
+      <CarGrid />,
+      document.getElementById('container')
+    );
+</script>
+</head>
+
+<body>
+    <div id="container"></div>
+</body>
+
+</html>
